@@ -1,0 +1,28 @@
+# Dependencies
+node_modules/
+
+# Build output
+.next/
+dist/
+build/
+out/
+
+# Environment
+.env
+.env.*
+!.env.sample
+
+# Logs
+logs/
+*.log
+
+# OS
+.DS_Store
+
+# Editor
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+
+# Prisma generated client
+db/generated/

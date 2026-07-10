@@ -1,0 +1,26 @@
+# Dependencies
+node_modules/
+
+# Prisma generated client
+db/generated/
+
+# Next.js build output
+landing/.next/
+landing/node_modules/
+
+# Lockfiles
+package-lock.json
+landing/package-lock.json
+
+# Logs
+logs/
+
+# Env files
+.env*
+!.env.sample
+
+# macOS
+.DS_Store
+
+# Assets
+assets/

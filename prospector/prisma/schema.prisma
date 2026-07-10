@@ -1,0 +1,128 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../db/generated"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Platform {
+  reddit
+  linkedin
+  x
+}
+
+enum Frequency {
+  hourly
+  every_6_hours
+  daily
+}
+
+enum MonitorResultStatus {
+  new
+  dismissed
+}
+
+// A Slack install target that installed Prospector: a single workspace (team)
+// or, for org-wide Enterprise Grid installs, the enterprise org itself.
+model Organization {
+  id                  String   @id @default(cuid())
+  // Stable install key: teamId for workspace installs, enterpriseId for org-wide installs.
+  slackInstallId      String   @unique
+  slackTeamId         String? // null for org-wide enterprise installs
+  slackEnterpriseId   String?
+  isEnterpriseInstall Boolean  @default(false)
+  name                String?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  users         User[]
+  installations SlackInstallation[]
+  monitors      Monitor[]
+}
+
+// A Slack user within an organization (created lazily on first interaction).
+model User {
+  id             String   @id @default(cuid())
+  slackUserId    String
+  organizationId String
+  name           String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  monitors     Monitor[]
+
+  @@unique([organizationId, slackUserId])
+}
+
+// Raw Bolt OAuth installation payload, one per install target (workspace or org).
+model SlackInstallation {
+  id                   String   @id @default(cuid())
+  organizationId       String
+  slackInstallId       String   @unique
+  slackTeamId          String? // null for org-wide enterprise installs
+  slackEnterpriseId    String?
+  isEnterpriseInstall  Boolean  @default(false)
+  installerSlackUserId String
+  installation         Json
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+}
+
+// A monitor config: keywords + platforms + frequency + target channel.
+model Monitor {
+  id             String     @id @default(cuid())
+  organizationId String
+  createdById    String
+  name           String
+  keywords       String[]
+  platforms      Platform[]
+  frequency      Frequency
+  channelId      String
+  instructions   String?
+  isActive       Boolean    @default(true)
+  lastRunAt      DateTime?
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+
+  organization Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdBy    User            @relation(fields: [createdById], references: [id], onDelete: Cascade)
+  results      MonitorResult[]
+
+  @@index([organizationId])
+}
+
+// A qualified lead surfaced by a monitor run.
+model MonitorResult {
+  id              String              @id @default(cuid())
+  monitorId       String
+  platform        Platform
+  author          String
+  url             String
+  content         String
+  matchedKeywords String[]
+  status          MonitorResultStatus @default(new)
+  slackMessageTs  String?
+  foundAt         DateTime            @default(now())
+
+  monitor Monitor        @relation(fields: [monitorId], references: [id], onDelete: Cascade)
+  replies MonitorReply[]
+
+  @@unique([monitorId, url])
+}
+
+// A drafted reply for a lead; multiple rows per result (regenerations), newest wins.
+model MonitorReply {
+  id              String   @id @default(cuid())
+  monitorResultId String
+  content         String
+  createdAt       DateTime @default(now())
+
+  result MonitorResult @relation(fields: [monitorResultId], references: [id], onDelete: Cascade)
+
+  @@index([monitorResultId])
+}

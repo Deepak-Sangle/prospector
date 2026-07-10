@@ -1,0 +1,27 @@
+# dependencies
+node_modules
+
+# next.js build output
+.next
+out
+build
+
+# misc
+.DS_Store
+*.pem
+coverage
+
+# generated
+next-env.d.ts
+*.tsbuildinfo
+
+# lockfiles
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# vercel
+.vercel
+
+# static assets
+public
