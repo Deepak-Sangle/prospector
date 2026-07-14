@@ -1,1 +1,23 @@
-{}
+{
+  "workbench.colorCustomizations": {
+    "activityBar.activeBackground": "#3346a0",
+    "activityBar.background": "#3346a0",
+    "activityBar.foreground": "#e7e7e7",
+    "activityBar.inactiveForeground": "#e7e7e799",
+    "activityBarBadge.background": "#300f15",
+    "activityBarBadge.foreground": "#e7e7e7",
+    "commandCenter.border": "#e7e7e799",
+    "sash.hoverBorder": "#3346a0",
+    "statusBar.background": "#273579",
+    "statusBar.foreground": "#e7e7e7",
+    "statusBarItem.hoverBackground": "#3346a0",
+    "statusBarItem.remoteBackground": "#273579",
+    "statusBarItem.remoteForeground": "#e7e7e7",
+    "titleBar.activeBackground": "#273579",
+    "titleBar.activeForeground": "#e7e7e7",
+    "titleBar.inactiveBackground": "#27357999",
+    "titleBar.inactiveForeground": "#e7e7e799"
+  },
+  "peacock.color": "#273579",
+  "cSpell.words": ["composio"]
+}

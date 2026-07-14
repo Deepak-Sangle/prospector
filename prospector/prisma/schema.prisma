@@ -24,6 +24,13 @@ enum MonitorResultStatus {
   dismissed
 }
 
+// Lifecycle of an OAuth account connected through Composio.
+enum ConnectedAccountStatus {
+  active
+  expired
+  inactive
+}
+
 // A Slack install target that installed Prospector: a single workspace (team)
 // or, for org-wide Enterprise Grid installs, the enterprise org itself.
 model Organization {
@@ -37,9 +44,67 @@ model Organization {
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
 
-  users         User[]
-  installations SlackInstallation[]
-  monitors      Monitor[]
+  users             User[]
+  installations     SlackInstallation[]
+  monitors          Monitor[]
+  connectedAccounts ConnectedAccount[]
+  companyBrief      CompanyBrief?
+}
+
+// The customer company Prospector is prospecting *for*. One brief per
+// organization, captured during onboarding. This is the ground truth the agent
+// uses to know who it represents, how to qualify leads, and how to draft replies.
+// Prospector is only the vendor/tool — this describes the customer's own business.
+model CompanyBrief {
+  id             String   @id @default(cuid())
+  organizationId String   @unique
+  // Company name as the customer refers to themselves.
+  companyName    String?
+  // Primary marketing/product website used during onboarding.
+  websiteUrl     String?
+  // What the company does — the core value proposition in a few sentences.
+  description    String?
+  // Products / features the company offers (freeform).
+  products       String?
+  // Who the ideal customer is: roles, company size, industry, buying signals.
+  idealCustomer  String?
+  // Known competitors, comma-separated or freeform.
+  competitors    String?
+  // Any other custom context the customer wants the agent to know.
+  notes          String?
+  // Whether onboarding has been completed (enough info to filter + reply well).
+  onboarded      Boolean  @default(false)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+}
+
+// An external social account (Reddit / LinkedIn / X) a Slack user connected
+// through Composio's OAuth flow, used to post replies back to the source
+// platform. One row per (organization, Slack user, platform).
+model ConnectedAccount {
+  id                String                 @id @default(cuid())
+  organizationId    String
+  // Slack user who authorized this account.
+  slackUserId       String
+  // Deterministic external identity we hand to Composio (`installId__slackUserId`).
+  composioUserId    String
+  platform          Platform
+  // Composio's connected-account id — the handle we execute tools against.
+  composioAccountId String                 @unique
+  status            ConnectedAccountStatus @default(active)
+  // OAuth scopes the provider granted, stored for visibility.
+  scopes            String[]               @default([])
+  // Human-friendly account identity (reddit username, linkedin urn, x handle).
+  uniqueIdentifier  String?
+  createdAt         DateTime               @default(now())
+  updatedAt         DateTime               @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, slackUserId, platform])
+  @@index([organizationId])
 }
 
 // A Slack user within an organization (created lazily on first interaction).
@@ -77,7 +142,6 @@ model SlackInstallation {
 model Monitor {
   id             String     @id @default(cuid())
   organizationId String
-  createdById    String
   name           String
   keywords       String[]
   platforms      Platform[]
@@ -90,8 +154,9 @@ model Monitor {
   updatedAt      DateTime   @updatedAt
 
   organization Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  createdBy    User            @relation(fields: [createdById], references: [id], onDelete: Cascade)
   results      MonitorResult[]
+  user         User?           @relation(fields: [userId], references: [id])
+  userId       String?
 
   @@index([organizationId])
 }
@@ -105,6 +170,9 @@ model MonitorResult {
   url             String
   content         String
   matchedKeywords String[]
+  // Native post identifier for replying via Composio: Reddit fullname (t3_…),
+  // X tweet id, or LinkedIn activity/share URN. Null for older rows.
+  externalId      String?
   status          MonitorResultStatus @default(new)
   slackMessageTs  String?
   foundAt         DateTime            @default(now())

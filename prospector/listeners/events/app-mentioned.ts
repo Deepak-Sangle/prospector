@@ -1,5 +1,4 @@
 import type { AllMiddlewareArgs, SlackEventMiddlewareArgs } from '@slack/bolt';
-
 import { runProspectorAgent } from '../../agent/index.ts';
 import { conversationStore } from '../../thread-context/index.ts';
 import { formatError } from '../../util/error.ts';

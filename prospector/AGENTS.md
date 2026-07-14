@@ -91,7 +91,8 @@ Postgres via Prisma 7 (driver adapter `@prisma/adapter-pg`, connection from `DAT
 - `db/client.ts` — shared `prisma` instance. `db/generated/` is gitignored; `prisma generate` runs on postinstall.
 - `db/installation-store.ts` — `createDbInstallationStore()`, the Bolt `InstallationStore` used by `app.ts` (per-workspace OAuth payloads in `SlackInstallation`).
 - `schemas/db.ts` — Zod mirrors of the Prisma models; app code uses these types, never the generated Prisma model types. Keep in sync with `prisma/schema.prisma`.
-- Schema changes: edit `prisma/schema.prisma` → `npm run db:migrate:dev` (commits a migration under `prisma/migrations/`) → update `schemas/db.ts`. The initial migration `0_init` was created offline; on first deploy run `npx prisma migrate resolve --applied 0_init` **only if** the tables already exist, otherwise just `npm run db:migrate`.
+- Schema changes: edit `prisma/schema.prisma` → `npm run db:migrate:dev` (commits a migration under `prisma/migrations/`) → update `schemas/db.ts`.
+- **Never hand-write or hand-edit migration SQL, and never edit files under `prisma/migrations/` (they are applied history).** Always let Prisma generate migrations from the schema diff via `npm run db:migrate:dev`.
 - `db/monitors.ts` — monitor repository (`createMonitor` / `listMonitors` / `deleteMonitor`), all scoped by the org's `slackInstallId`; lazily upserts Organization + User so tools work even before install rows are backfilled.
 - The lead tools in `agent/tools/leads.ts` are still in-memory stubs — wiring them to `MonitorResult`/`MonitorReply` is the next step.
 

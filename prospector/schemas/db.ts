@@ -18,6 +18,26 @@ export const OrganizationSchema = z.object({
 });
 export type Organization = z.infer<typeof OrganizationSchema>;
 
+// The customer company Prospector prospects *for*. One per organization,
+// captured during onboarding. Prospector is only the vendor — this describes
+// the customer's own business, which the agent uses to qualify leads and draft
+// replies in the customer's voice.
+export const CompanyBriefSchema = z.object({
+  id: z.string(),
+  organizationId: z.string(),
+  companyName: z.string().nullable().describe('Company name as the customer refers to themselves'),
+  websiteUrl: z.string().nullable().describe('Primary marketing/product website'),
+  description: z.string().nullable().describe('What the company does — core value proposition'),
+  products: z.string().nullable().describe('Products / features the company offers'),
+  idealCustomer: z.string().nullable().describe('Ideal customer: roles, company size, industry, buying signals'),
+  competitors: z.string().nullable().describe('Known competitors'),
+  notes: z.string().nullable().describe('Any other custom context for the agent'),
+  onboarded: z.boolean().describe('Whether onboarding captured enough info to filter + reply well'),
+  createdAt: z.date(),
+  updatedAt: z.date(),
+});
+export type CompanyBrief = z.infer<typeof CompanyBriefSchema>;
+
 export const UserSchema = z.object({
   id: z.string(),
   slackUserId: z.string().describe('Slack user ID. Example: "U0123456789"'),
@@ -45,7 +65,6 @@ export type SlackInstallation = z.infer<typeof SlackInstallationSchema>;
 export const MonitorRecordSchema = MonitorInputSchema.extend({
   id: z.string(),
   organizationId: z.string(),
-  createdById: z.string().describe('User.id of the creator (not the raw Slack user ID)'),
   isActive: z.boolean(),
   lastRunAt: z.date().nullable(),
   createdAt: z.date(),
@@ -64,11 +83,36 @@ export const MonitorResultSchema = z.object({
   url: z.string().describe('Link to the original post — unique per monitor (dedupe key)'),
   content: z.string(),
   matchedKeywords: z.array(z.string()),
+  externalId: z
+    .string()
+    .nullable()
+    .describe('Native post id for replying via Composio (Reddit fullname, X tweet id, LinkedIn URN)'),
   status: MonitorResultStatusSchema,
   slackMessageTs: z.string().nullable().describe('ts of the lead card posted to the monitor channel'),
   foundAt: z.date(),
 });
 export type MonitorResult = z.infer<typeof MonitorResultSchema>;
+
+export const ConnectedAccountStatusSchema = z.enum(['active', 'expired', 'inactive']);
+export type ConnectedAccountStatus = z.infer<typeof ConnectedAccountStatusSchema>;
+
+export const ConnectedAccountSchema = z.object({
+  id: z.string(),
+  organizationId: z.string(),
+  slackUserId: z.string().describe('Slack user who authorized this account. Example: "U0123456789"'),
+  composioUserId: z.string().describe('Deterministic external identity handed to Composio'),
+  platform: PlatformSchema,
+  composioAccountId: z.string().describe("Composio's connected-account id"),
+  status: ConnectedAccountStatusSchema,
+  scopes: z.array(z.string()).describe('OAuth scopes granted by the provider'),
+  uniqueIdentifier: z
+    .string()
+    .nullable()
+    .describe('Human-friendly account identity (reddit username, linkedin urn, x handle)'),
+  createdAt: z.date(),
+  updatedAt: z.date(),
+});
+export type ConnectedAccount = z.infer<typeof ConnectedAccountSchema>;
 
 export const MonitorReplySchema = z.object({
   id: z.string(),

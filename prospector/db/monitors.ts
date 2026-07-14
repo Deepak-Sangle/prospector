@@ -11,32 +11,7 @@ export interface SlackOrgContext {
   slackUserId: string;
 }
 
-/**
- * Find-or-create the Organization and User rows for a request context. The
- * organization normally already exists from the OAuth install; this keeps
- * tool calls resilient if a user interacts before rows are backfilled.
- */
-async function upsertOrgAndUser({
-  slackInstallId,
-  slackTeamId,
-  slackEnterpriseId,
-  isEnterpriseInstall,
-  slackUserId,
-}: SlackOrgContext): Promise<{ organizationId: string; userId: string }> {
-  const organization = await prisma.organization.upsert({
-    where: { slackInstallId },
-    create: { slackInstallId, slackTeamId, slackEnterpriseId, isEnterpriseInstall },
-    update: {},
-  });
-  const user = await prisma.user.upsert({
-    where: { organizationId_slackUserId: { organizationId: organization.id, slackUserId } },
-    create: { organizationId: organization.id, slackUserId },
-    update: {},
-  });
-  return { organizationId: organization.id, userId: user.id };
-}
-
-/** Create a monitor owned by the context's organization and user. */
+/** Create a monitor owned by the context's organization (resolved via install key). */
 export async function createMonitor({
   context,
   input,
@@ -44,8 +19,9 @@ export async function createMonitor({
   context: SlackOrgContext;
   input: MonitorInput;
 }): Promise<MonitorRecord> {
-  const { organizationId, userId } = await upsertOrgAndUser(context);
-  return prisma.monitor.create({ data: { ...input, organizationId, createdById: userId } });
+  return prisma.monitor.create({
+    data: { ...input, organization: { connect: { slackInstallId: context.slackInstallId } } },
+  });
 }
 
 /** List all monitors belonging to the organization, newest first. */
@@ -54,6 +30,44 @@ export async function listMonitors({ slackInstallId }: { slackInstallId: string 
     where: { organization: { slackInstallId } },
     orderBy: { createdAt: 'desc' },
   });
+}
+
+/** List every active monitor across all organizations (used to seed the scheduler on boot). */
+export async function listActiveMonitors(): Promise<MonitorRecord[]> {
+  return prisma.monitor.findMany({ where: { isActive: true } });
+}
+
+/** Fields that can be changed on an existing monitor. All optional (partial update). */
+export interface MonitorUpdate {
+  name?: string;
+  keywords?: string[];
+  platforms?: MonitorInput['platforms'];
+  frequency?: MonitorInput['frequency'];
+  channelId?: string;
+  instructions?: string | null;
+  isActive?: boolean;
+}
+
+/**
+ * Update a monitor by ID, scoped to the organization so one workspace can
+ * never edit another's monitor. Only the provided fields are changed. Returns
+ * the updated record, or null when no matching monitor exists.
+ */
+export async function updateMonitor({
+  slackInstallId,
+  monitorId,
+  data,
+}: {
+  slackInstallId: string;
+  monitorId: string;
+  data: MonitorUpdate;
+}): Promise<MonitorRecord | null> {
+  const { count } = await prisma.monitor.updateMany({
+    where: { id: monitorId, organization: { slackInstallId } },
+    data,
+  });
+  if (count === 0) return null;
+  return prisma.monitor.findFirst({ where: { id: monitorId, organization: { slackInstallId } } });
 }
 
 /**

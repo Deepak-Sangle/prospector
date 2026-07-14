@@ -41,6 +41,8 @@
         "assistant:write",
         "reactions:write",
         "chat:write",
+        "channels:read",
+        "groups:read",
         "channels:history",
         "groups:history",
         "im:history",
