@@ -10,6 +10,15 @@ primary_region = "iad"
 [env]
   NODE_ENV = "production"
   PORT = "3000"
+  # Point Google ADC at the service-account key written by [[files]] below,
+  # so the Vertex AI SDK can authenticate (no gcloud login on Fly).
+  GOOGLE_APPLICATION_CREDENTIALS = "/app/gcp-sa.json"
+
+# Decodes the base64 GCP_SA_JSON secret into a file inside the machine.
+# Set it with: fly secrets set GCP_SA_JSON="$(base64 -i key.json)" -a prospector-sia
+[[files]]
+  guest_path = "/app/gcp-sa.json"
+  secret_name = "GCP_SA_JSON"
 
 # Run Prisma migrations against DATABASE_URL on each release, before the
 # new machines start serving.
