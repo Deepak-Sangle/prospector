@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs';
 import { z } from 'zod';
 import { startScheduler } from './cron/scheduler.ts';
 import { createDbInstallationStore } from './db/installation-store.ts';
+import { createHealthRoute } from './health-route.ts';
 import { createOAuthCallbackRoute } from './integrations/callback-route.ts';
 import { registerListeners } from './listeners/index.ts';
 import { env } from './util/env.ts';
@@ -29,7 +30,7 @@ const app = new App({
   scopes: botScopes,
   redirectUri: env.SLACK_REDIRECT_URI,
   installationStore: createDbInstallationStore(),
-  customRoutes: [createOAuthCallbackRoute()],
+  customRoutes: [createHealthRoute(), createOAuthCallbackRoute()],
   installerOptions: {
     stateVerification: true,
     redirectUriPath: new URL(env.SLACK_REDIRECT_URI).pathname,
