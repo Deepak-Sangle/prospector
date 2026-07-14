@@ -1,6 +1,8 @@
 import { ImageResponse } from "next/og";
 
 // Apple touch icon (raster required — SVG isn't supported for apple-icon).
+// Render once at build time so it works with `output: "export"`.
+export const dynamic = "force-static";
 export const size = { width: 180, height: 180 };
 export const contentType = "image/png";
 

@@ -2,7 +2,7 @@
 # Deploy with `fly deploy` (from this dir). Secrets are NOT set here — use
 # `fly secrets set KEY=value` (see the deploy notes). Change `app` and
 # `primary_region` to match your account before the first deploy.
-app = "prospector"
+app = "prospector-sia"
 primary_region = "iad"
 
 [build]
