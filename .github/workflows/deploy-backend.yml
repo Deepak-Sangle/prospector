@@ -1,0 +1,24 @@
+name: Deploy backend
+
+# Deploys the Prospector Slack agent to Fly.io on pushes to main that touch
+# prospector/. Requires a FLY_API_TOKEN repo secret
+# (create with: fly tokens create deploy -a prospector-sia).
+on:
+  push:
+    branches: [main]
+    paths:
+      - "prospector/**"
+      - ".github/workflows/deploy-backend.yml"
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    concurrency: deploy-backend # never run two deploys at once
+    steps:
+      - uses: actions/checkout@v4
+      - uses: superfly/flyctl-actions/setup-flyctl@master
+      - run: flyctl deploy --remote-only
+        working-directory: prospector
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
