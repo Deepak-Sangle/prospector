@@ -1,0 +1,11 @@
+node_modules
+db/generated
+.env
+.env.*
+!.env.sample
+logs
+.git
+.DS_Store
+tests
+diagrams
+*.md

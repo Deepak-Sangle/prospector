@@ -1,0 +1,13 @@
+{
+  // Assets-only Worker: no `main` script, just the static `out/` dir that
+  // `next build` (output: "export") produces. Deploy with `wrangler deploy`
+  // or via the GitHub Actions workflow at .github/workflows/deploy-landing.yml.
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "prospector",
+  "compatibility_date": "2025-07-14",
+  "assets": {
+    "directory": "./out",
+    // Next export writes a 404.html; serve it for unknown paths.
+    "not_found_handling": "404-page"
+  }
+}
